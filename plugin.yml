@@ -1,0 +1,8 @@
+name: DenmarkAddresses
+main: com.comze_instancelabs.addresses.Main
+version: 1.0
+author: instancelabs
+commands:
+   address:
+      description: Main command
+      usage: /address
