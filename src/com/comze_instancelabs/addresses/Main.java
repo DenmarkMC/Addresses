@@ -38,7 +38,7 @@ public class Main extends JavaPlugin {
 					// getLL(p, "http://dawa.aws.dk/adresser?vejnavn=" + address
 					// + "&husnr=" + number + "&supplerendebynavn=Bjerge Str");
 					p.sendMessage("http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number);
-					getLL(p, "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number);
+					getLL(p, "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number + "&srid=25832");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -85,7 +85,8 @@ public class Main extends JavaPlugin {
 		// getConvert(p, x, y);
 		// t(p, x, y);
 		// executeConvert(p, x, y);
-		doStuffz(p, x, y);
+		//doStuffz(p, x, y);
+		p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, 100, 6200000 - Double.parseDouble(y)));
 	}
 
 	double lat = 0D;
