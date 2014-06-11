@@ -6,3 +6,4 @@ commands:
    address:
       description: Main command
       usage: /address
+      aliases: [atp, at]
