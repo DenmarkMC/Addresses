@@ -19,6 +19,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -72,24 +73,29 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				String number = "";
 				String postcode = "";
 				int c = 0;
-				for(int i = 0; i < args.length; i++){
-					if(!Character.isDigit(args[i].charAt(0))){
+				for (int i = 0; i < args.length; i++) {
+					if (!Character.isDigit(args[i].charAt(0))) {
 						address += toUppercase(args[i]) + " ";
-					}else{
+					} else {
 						c = i;
 						break;
 					}
 				}
-				address = address.substring(0, address.length() - 1);
-				
-				if(c < args.length + 1){
-					number = args[c].toUpperCase();
-					postcode = args[c + 1];
-				}else{
+				if (address.length() < 1) {
 					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
+					p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
 					return true;
 				}
-				
+				address = address.substring(0, address.length() - 1);
+
+				if (c < args.length + 1) {
+					number = args[c].toUpperCase();
+					postcode = args[c + 1];
+				} else {
+					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
+					p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
+					return true;
+				}
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
 					tryTP(p, address, number, postcode, true);
@@ -109,10 +115,15 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				return true;
 			} else if (args.length > 0 && args.length < 3) {
 				p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
+				p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
 				return true;
 			} else {
 				int points = (int) econ.getBalance(p.getName());
-				p.sendMessage("Address teleportation points left: " + ChatColor.DARK_AQUA + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
+				String color = ChatColor.DARK_AQUA.toString();
+				if (points < 1) {
+					color = ChatColor.GOLD.toString();
+				}
+				p.sendMessage("Address teleportation points left: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
 					p.sendMessage("No Address Teleportation Points left. Type " + ChatColor.AQUA + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
 				}
@@ -123,16 +134,18 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	/**
-	 * Sets the first character of a string uppercase and the rest lowercase and returns the new string
+	 * Sets the first character of a string uppercase and the rest lowercase and
+	 * returns the new string
+	 * 
 	 * @param str
 	 * @return
 	 */
-	public String toUppercase(String str){
+	public String toUppercase(String str) {
 		String ret = str.toLowerCase();
-		ret = Character.toUpperCase(ret.charAt(0)) + ret.substring(1); 
+		ret = Character.toUpperCase(ret.charAt(0)) + ret.substring(1);
 		return ret;
 	}
-	
+
 	public void tryTP(Player p, String address, String number, String postcode, boolean needsServerCheck) {
 		try {
 			String req = "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number + "&postnr=" + postcode + "&srid=25832";
@@ -162,7 +175,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'GET' request to URL : " + url);
-		//System.out.println("Response Code : " + responseCode);
+		// System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -181,8 +194,8 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		int cindex = r.indexOf("\"koordinater\"");
 		int commaindex = r.indexOf(",", cindex);
 		int endstuffsindex = r.indexOf("]", commaindex);
-		if(cindex < 0 || commaindex < 0){
-			p.sendMessage(ChatColor.RED + "An error occurred! Did you type in a correct address?");
+		if (cindex < 0 || commaindex < 0) {
+			p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
 			return;
 		}
 		x = r.substring(cindex + 24, commaindex);
@@ -215,7 +228,26 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 		tpy++;
 
-		p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
+		// try to find a grass/stone block in a radius of 10 blocks (20*20)
+		// TODO test out
+		boolean done = false;
+		for (int i_ = 0; i_ < 20; i_++) {
+			if(done){
+				break;
+			}
+			for (int j_ = 0; j_ < 20; j_++) {
+				Block b = p.getWorld().getBlockAt(tpx - 10 + i_, tpy - 2, tpz - 10 + j_);
+				if (b.getType() == Material.STONE || b.getType() == Material.GRASS) {
+					tpx = tpx - 5 + i_;
+					tpz = tpz - 5 + j_;
+					done = true;
+					break;
+				}
+			}
+		}
+
+		p.teleport(new Location(p.getWorld(), tpx, tpy, tpz));
+		//p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
 	}
 
 	/**
