@@ -279,6 +279,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			String number = res3.getString("number");
 			String postcode = res3.getString("postcode");
 			tryTP(Bukkit.getPlayer(p_), address, number, postcode, false);
+			mysqlRemoveTempAddress(p_);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -295,7 +296,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		c = MySQL.open();
 
 		try {
-			c.createStatement().executeUpdate("DELETE * FROM address WHERE player='" + p_ + "'");
+			c.createStatement().executeUpdate("DELETE FROM address WHERE player='" + p_ + "'");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
