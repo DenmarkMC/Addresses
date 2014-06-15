@@ -1,6 +1,9 @@
 package com.comze_instancelabs.addresses;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -10,6 +13,7 @@ import java.sql.SQLException;
 
 import net.milkbowl.vault.economy.Economy;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -99,6 +103,12 @@ public class Main extends JavaPlugin {
 		}
 	}
 
+	/**
+	 * Gets UTM coordinates from official denmark geo agency
+	 * @param p
+	 * @param url
+	 * @throws Exception
+	 */
 	public void getLL(Player p, String url) throws Exception {
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -150,6 +160,13 @@ public class Main extends JavaPlugin {
 		p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
 	}
 
+	/**
+	 * Saves address for later free teleportation for the player
+	 * @param p_
+	 * @param address
+	 * @param number
+	 * @param postcode
+	 */
 	public void mysqlUpdateAddressUses(String p_, String address, String number, String postcode) {
 		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
 		Connection c = null;
@@ -167,6 +184,14 @@ public class Main extends JavaPlugin {
 		}
 	}
 
+	/**
+	 * Returns whether address is free to teleport to (as player paid for it) or not
+	 * @param p
+	 * @param address
+	 * @param number
+	 * @param postcode
+	 * @return
+	 */
 	public boolean mysqlUsedAddress(String p, String address, String number, String postcode) {
 		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
 		Connection c = null;
@@ -184,6 +209,46 @@ public class Main extends JavaPlugin {
 		return false;
 	}
 	
+	/**
+	 * Temporary saves address when player appears to be on wrong server
+	 * @param p_
+	 * @param address
+	 * @param number
+	 * @param postcode
+	 */
+	public void mysqlUpdateAddressTemp(String p_, String address, String number, String postcode) {
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM address WHERE player='" + p_ + "' AND street='" + address + "' AND number='" + number + "' AND postcode='" + postcode + "'");
+			if (!res3.isBeforeFirst()) {
+				// there's no such user
+				c.createStatement().executeUpdate("INSERT INTO address VALUES('0', '" + address + "', '" + p_ + "', '" + number + "', '" + postcode + "')");
+				return;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public void handleWrongServer(){
+		
+	}
+	
+	public void connectToServer(String player, String server) {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(stream);
+		try {
+			out.writeUTF("Connect");
+			out.writeUTF(server);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Bukkit.getPlayer(player).sendPluginMessage(this, "BungeeCord", stream.toByteArray());
+	}
 
 
 }
