@@ -74,7 +74,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				int c = 0;
 				for(int i = 0; i < args.length; i++){
 					if(!Character.isDigit(args[i].charAt(0))){
-						address += args[i] + " ";
+						address += toUppercase(args[i]) + " ";
 					}else{
 						c = i;
 						break;
@@ -83,7 +83,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				address = address.substring(0, address.length() - 1);
 				
 				if(c < args.length + 1){
-					number = args[c];
+					number = args[c].toUpperCase();
 					postcode = args[c + 1];
 				}else{
 					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
@@ -122,6 +122,17 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		return false;
 	}
 
+	/**
+	 * Sets the first character of a string uppercase and the rest lowercase and returns the new string
+	 * @param str
+	 * @return
+	 */
+	public String toUppercase(String str){
+		String ret = str.toLowerCase();
+		ret = Character.toUpperCase(ret.charAt(0)) + ret.substring(1); 
+		return ret;
+	}
+	
 	public void tryTP(Player p, String address, String number, String postcode, boolean needsServerCheck) {
 		try {
 			String req = "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number + "&postnr=" + postcode + "&srid=25832";
@@ -170,6 +181,10 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		int cindex = r.indexOf("\"koordinater\"");
 		int commaindex = r.indexOf(",", cindex);
 		int endstuffsindex = r.indexOf("]", commaindex);
+		if(cindex < 0 || commaindex < 0){
+			p.sendMessage(ChatColor.RED + "An error occurred! Did you type in a correct address?");
+			return;
+		}
 		x = r.substring(cindex + 24, commaindex);
 		y = r.substring(commaindex + 9, (endstuffsindex - 6));
 
