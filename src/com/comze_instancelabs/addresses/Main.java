@@ -68,13 +68,33 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			}
 			Player p = (Player) sender;
 			if (args.length > 2) {
-				String address = args[0];
-				String number = args[1];
-				String postcode = args[2];
+				String address = "";
+				String number = "";
+				String postcode = "";
+				int c = 0;
+				for(int i = 0; i < args.length; i++){
+					if(!Character.isDigit(args[i].charAt(0))){
+						address += args[i] + " ";
+					}else{
+						c = i;
+						break;
+					}
+				}
+				address = address.substring(0, address.length() - 1);
+				
+				if(c < args.length + 1){
+					number = args[c];
+					postcode = args[c + 1];
+				}else{
+					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
+					return true;
+				}
+				
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
 					tryTP(p, address, number, postcode, true);
 					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
+					p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
 					return true;
 				}
 
@@ -123,7 +143,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	 * @throws Exception
 	 */
 	public void getLL(Player p, String url, boolean needsServerCheck, String address, String number, String postcode) throws Exception {
-		URL obj = new URL(url);
+		URL obj = new URL(url.replaceAll(" ", "%20"));
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
 
@@ -175,6 +195,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				this.handleCorrectServer(p.getName(), address, number, postcode);
 				return;
 			}
+			return;
 		}
 
 		tpy++;
