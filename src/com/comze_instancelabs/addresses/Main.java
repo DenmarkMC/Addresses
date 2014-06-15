@@ -94,7 +94,6 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
 					tryTP(p, address, number, postcode, true);
 					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
-					p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
 					return true;
 				}
 
@@ -103,6 +102,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					econ.withdrawPlayer(p.getName(), 1.0D);
 					tryTP(p, address, number, postcode, true);
 					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
+					p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
 				} else {
 					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type /buy to get more.");
 				}
