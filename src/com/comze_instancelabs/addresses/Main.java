@@ -1,7 +1,9 @@
 package com.comze_instancelabs.addresses;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,10 +22,14 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.messaging.PluginMessageListener;
 
-public class Main extends JavaPlugin {
+public class Main extends JavaPlugin implements PluginMessageListener, Listener {
 
 	Economy econ = null;
 
@@ -35,6 +41,8 @@ public class Main extends JavaPlugin {
 		getConfig().addDefault("mysql.pw", "password");
 		getConfig().options().copyDefaults(true);
 		this.saveConfig();
+
+		Bukkit.getPluginManager().registerEvents(this, this);
 	}
 
 	private boolean setupEconomy() {
@@ -61,7 +69,7 @@ public class Main extends JavaPlugin {
 				String postcode = args[2];
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
-					tryTP(p, address, number, postcode);
+					tryTP(p, address, number, postcode, true);
 					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
 					return true;
 				}
@@ -69,7 +77,7 @@ public class Main extends JavaPlugin {
 				int currentpoints = (int) econ.getBalance(p.getName());
 				if (currentpoints > 0) {
 					econ.withdrawPlayer(p.getName(), 1.0D);
-					tryTP(p, address, number, postcode);
+					tryTP(p, address, number, postcode, true);
 					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
 				} else {
 					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type /buy to get more.");
@@ -80,7 +88,7 @@ public class Main extends JavaPlugin {
 				return true;
 			} else {
 				int points = (int) econ.getBalance(p.getName());
-				p.sendMessage("Address teleportation points left: " + ChatColor.DARK_AQUA + "" + ChatColor.BOLD + Integer.toString((int)econ.getBalance(p.getName())));
+				p.sendMessage("Address teleportation points left: " + ChatColor.DARK_AQUA + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
 					p.sendMessage("No Address Teleportation Points left. Type " + ChatColor.AQUA + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
 				}
@@ -90,13 +98,13 @@ public class Main extends JavaPlugin {
 		return false;
 	}
 
-	public void tryTP(Player p, String address, String number, String postcode) {
+	public void tryTP(Player p, String address, String number, String postcode, boolean needsServerCheck) {
 		try {
 			String req = "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number + "&postnr=" + postcode + "&srid=25832";
 			if (p.isOp()) {
 				p.sendMessage(req);
 			}
-			getLL(p, req);
+			getLL(p, req, needsServerCheck, address, number, postcode);
 			mysqlUpdateAddressUses(p.getName(), address, number, postcode);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -105,11 +113,12 @@ public class Main extends JavaPlugin {
 
 	/**
 	 * Gets UTM coordinates from official denmark geo agency
+	 * 
 	 * @param p
 	 * @param url
 	 * @throws Exception
 	 */
-	public void getLL(Player p, String url) throws Exception {
+	public void getLL(Player p, String url, boolean needsServerCheck, String address, String number, String postcode) throws Exception {
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
@@ -155,6 +164,14 @@ public class Main extends JavaPlugin {
 			}
 		}
 
+		if(p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR){
+			// most likely wrong server
+			if(needsServerCheck){
+				this.handleCorrectServer(p.getName(), address, number, postcode);
+				return;
+			}
+		}
+		
 		tpy++;
 
 		p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
@@ -162,6 +179,7 @@ public class Main extends JavaPlugin {
 
 	/**
 	 * Saves address for later free teleportation for the player
+	 * 
 	 * @param p_
 	 * @param address
 	 * @param number
@@ -185,7 +203,9 @@ public class Main extends JavaPlugin {
 	}
 
 	/**
-	 * Returns whether address is free to teleport to (as player paid for it) or not
+	 * Returns whether address is free to teleport to (as player paid for it) or
+	 * not
+	 * 
 	 * @param p
 	 * @param address
 	 * @param number
@@ -208,16 +228,17 @@ public class Main extends JavaPlugin {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Temporary saves address when player appears to be on wrong server
+	 * 
 	 * @param p_
 	 * @param address
 	 * @param number
 	 * @param postcode
 	 */
 	public void mysqlUpdateAddressTemp(String p_, String address, String number, String postcode) {
-		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
 		Connection c = null;
 		c = MySQL.open();
 
@@ -232,12 +253,78 @@ public class Main extends JavaPlugin {
 			e.printStackTrace();
 		}
 	}
-	
-	
-	public void handleWrongServer(){
-		
+
+	/**
+	 * Will teleport the player if an address is found in the temp database
+	 * 
+	 * @param p_
+	 */
+	public void mysqlHandleTempAddress(String p_) {
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM address WHERE player='" + p_ + "'");
+			if (!res3.isBeforeFirst()) {
+				return;
+			}
+			res3.next();
+			String address = res3.getString("street");
+			String number = res3.getString("number");
+			String postcode = res3.getString("postcode");
+			tryTP(Bukkit.getPlayer(p_), address, number, postcode, false);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
+	/**
+	 * Removes a temp address from the database
+	 * 
+	 * @param p_
+	 */
+	public void mysqlRemoveTempAddress(String p_) {
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			c.createStatement().executeUpdate("DELETE * FROM address WHERE player='" + p_ + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Will save the address into mysql and connect the player to the correct
+	 * server
+	 * 
+	 * @param player
+	 * @param address
+	 * @param number
+	 * @param postcode
+	 */
+	public void handleCorrectServer(final String player, String address, String number, String postcode) {
+		if (serverName.equalsIgnoreCase("east")) {
+			this.mysqlUpdateAddressTemp(player, address, number, postcode);
+			Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+				public void run() {
+					connectToServer(player, "west");
+				}
+			}, 30L); // 1.5 secs
+		} else if (serverName.equalsIgnoreCase("west")) {
+			this.mysqlUpdateAddressTemp(player, address, number, postcode);
+			Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+				public void run() {
+					connectToServer(player, "east");
+				}
+			}, 30L); // 1.5 secs
+		}
+	}
+
+	// BUNGEE FUNCTIONS START
+
 	public void connectToServer(String player, String server) {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		DataOutputStream out = new DataOutputStream(stream);
@@ -250,5 +337,46 @@ public class Main extends JavaPlugin {
 		Bukkit.getPlayer(player).sendPluginMessage(this, "BungeeCord", stream.toByteArray());
 	}
 
+	public void getCurrentServername(String player) {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(stream);
+		try {
+			out.writeUTF("GetServer");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Bukkit.getPlayer(player).sendPluginMessage(this, "BungeeCord", stream.toByteArray());
+	}
+
+	public String serverName = "";
+
+	@Override
+	public void onPluginMessageReceived(String channel, Player player, byte[] message) {
+		if (!channel.equals("BungeeCord")) {
+			return;
+		}
+
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
+			String subchannel = in.readUTF();
+			if (subchannel.equals("GetServer")) {
+				serverName = in.readUTF();
+			}
+		} catch (IOException e) {
+			//
+		}
+	}
+
+	// BUNGEE FUNCTIONS STOP
+
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent event) {
+		if (serverName == "") {
+			getCurrentServername(event.getPlayer().getName());
+		}
+
+		// check if need to be teleported somewhere
+		this.mysqlHandleTempAddress(event.getPlayer().getName());
+	}
 
 }
