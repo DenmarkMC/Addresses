@@ -43,6 +43,10 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		this.saveConfig();
 
 		Bukkit.getPluginManager().registerEvents(this, this);
+
+		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+		this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
+
 	}
 
 	private boolean setupEconomy() {
@@ -127,7 +131,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'GET' request to URL : " + url);
-		System.out.println("Response Code : " + responseCode);
+		//System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -164,14 +168,15 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			}
 		}
 
-		if(p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR){
+		if (p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR) {
 			// most likely wrong server
-			if(needsServerCheck){
+			if (needsServerCheck) {
+				getLogger().info("Wrong server, fixing it.");
 				this.handleCorrectServer(p.getName(), address, number, postcode);
 				return;
 			}
 		}
-		
+
 		tpy++;
 
 		p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
@@ -306,6 +311,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	 * @param postcode
 	 */
 	public void handleCorrectServer(final String player, String address, String number, String postcode) {
+		getLogger().info(serverName);
 		if (serverName.equalsIgnoreCase("east")) {
 			this.mysqlUpdateAddressTemp(player, address, number, postcode);
 			Bukkit.getScheduler().runTaskLater(this, new Runnable() {
@@ -345,17 +351,13 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		Bukkit.getPlayer(player).sendPluginMessage(this, "BungeeCord", stream.toByteArray());
+		getServer().sendPluginMessage(this, "BungeeCord", stream.toByteArray());
 	}
 
 	public String serverName = "";
 
 	@Override
 	public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-		if (!channel.equals("BungeeCord")) {
-			return;
-		}
-
 		try {
 			DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
 			String subchannel = in.readUTF();
@@ -363,7 +365,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				serverName = in.readUTF();
 			}
 		} catch (IOException e) {
-			//
+			e.printStackTrace();
 		}
 	}
 
@@ -371,9 +373,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
-		if (serverName == "") {
-			getCurrentServername(event.getPlayer().getName());
-		}
+		getCurrentServername(event.getPlayer().getName());
 
 		// check if need to be teleported somewhere
 		this.mysqlHandleTempAddress(event.getPlayer().getName());
