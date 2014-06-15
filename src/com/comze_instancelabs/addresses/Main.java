@@ -441,8 +441,12 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	// BUNGEE FUNCTIONS STOP
 
 	@EventHandler
-	public void onPlayerJoin(PlayerJoinEvent event) {
-		getCurrentServername(event.getPlayer().getName());
+	public void onPlayerJoin(final PlayerJoinEvent event) {
+		Bukkit.getScheduler().runTaskLater(this, new Runnable(){
+			public void run(){
+				getCurrentServername(event.getPlayer().getName());
+			}
+		}, 30L);
 
 		// check if need to be teleported somewhere
 		this.mysqlHandleTempAddress(event.getPlayer().getName());
