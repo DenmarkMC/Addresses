@@ -30,6 +30,8 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
+import com.comze_instancelabs.cars.CarsListener;
+
 public class Main extends JavaPlugin implements PluginMessageListener, Listener {
 
 	Economy econ = null;
@@ -44,6 +46,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		this.saveConfig();
 
 		Bukkit.getPluginManager().registerEvents(this, this);
+		Bukkit.getPluginManager().registerEvents(new CarsListener(this), this);
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 		this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
@@ -98,7 +101,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
-					if(tryTP(p, address, number, postcode, true)){
+					if (tryTP(p, address, number, postcode, true)) {
 						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
 					}
 					return true;
@@ -106,11 +109,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 				int currentpoints = (int) econ.getBalance(p.getName());
 				if (currentpoints > 0) {
-					if(tryTP(p, address, number, postcode, true)){
+					if (tryTP(p, address, number, postcode, true)) {
 						econ.withdrawPlayer(p.getName(), 1.0D);
 						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
 						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
-					
+
 					}
 				} else {
 					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type /buy to get more.");
@@ -155,7 +158,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			if (p.isOp()) {
 				p.sendMessage(req);
 			}
-			if(!getLL(p, req, needsServerCheck, address, number, postcode)){
+			if (!getLL(p, req, needsServerCheck, address, number, postcode)) {
 				return false;
 			}
 			mysqlUpdateAddressUses(p.getName(), address, number, postcode);
