@@ -98,17 +98,20 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
-					tryTP(p, address, number, postcode, true);
-					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
+					if(tryTP(p, address, number, postcode, true)){
+						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
+					}
 					return true;
 				}
 
 				int currentpoints = (int) econ.getBalance(p.getName());
 				if (currentpoints > 0) {
-					econ.withdrawPlayer(p.getName(), 1.0D);
-					tryTP(p, address, number, postcode, true);
-					p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
-					p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
+					if(tryTP(p, address, number, postcode, true)){
+						econ.withdrawPlayer(p.getName(), 1.0D);
+						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
+						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
+					
+					}
 				} else {
 					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type /buy to get more.");
 				}
@@ -146,17 +149,20 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		return ret;
 	}
 
-	public void tryTP(Player p, String address, String number, String postcode, boolean needsServerCheck) {
+	public boolean tryTP(Player p, String address, String number, String postcode, boolean needsServerCheck) {
 		try {
 			String req = "http://dawa.aws.dk/adresser?vejnavn=" + address + "&husnr=" + number + "&postnr=" + postcode + "&srid=25832";
 			if (p.isOp()) {
 				p.sendMessage(req);
 			}
-			getLL(p, req, needsServerCheck, address, number, postcode);
+			if(!getLL(p, req, needsServerCheck, address, number, postcode)){
+				return false;
+			}
 			mysqlUpdateAddressUses(p.getName(), address, number, postcode);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return true;
 	}
 
 	/**
@@ -166,7 +172,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	 * @param url
 	 * @throws Exception
 	 */
-	public void getLL(Player p, String url, boolean needsServerCheck, String address, String number, String postcode) throws Exception {
+	public boolean getLL(Player p, String url, boolean needsServerCheck, String address, String number, String postcode) throws Exception {
 		URL obj = new URL(url.replaceAll(" ", "%20"));
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
@@ -194,9 +200,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		int cindex = r.indexOf("\"koordinater\"");
 		int commaindex = r.indexOf(",", cindex);
 		int endstuffsindex = r.indexOf("]", commaindex);
+
+		// TODO fix unexpected inputs like '/atp a 1 1' which lead to errors
 		if (cindex < 0 || commaindex < 0) {
 			p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
-			return;
+			return false;
 		}
 		x = r.substring(cindex + 24, commaindex);
 		y = r.substring(commaindex + 9, (endstuffsindex - 6));
@@ -221,18 +229,17 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			if (needsServerCheck) {
 				getLogger().info("Wrong server, fixing it.");
 				this.handleCorrectServer(p.getName(), address, number, postcode);
-				return;
+				return true;
 			}
-			return;
+			return true;
 		}
 
 		tpy++;
 
 		// try to find a grass/stone block in a radius of 10 blocks (20*20)
-		// TODO test out
 		boolean done = false;
 		for (int i_ = 0; i_ < 20; i_++) {
-			if(done){
+			if (done) {
 				break;
 			}
 			for (int j_ = 0; j_ < 20; j_++) {
@@ -247,7 +254,9 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		}
 
 		p.teleport(new Location(p.getWorld(), tpx, tpy, tpz));
-		//p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000, tpy, 6200000 - Double.parseDouble(y)));
+		// p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000,
+		// tpy, 6200000 - Double.parseDouble(y)));
+		return true;
 	}
 
 	/**
@@ -442,8 +451,8 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 	@EventHandler
 	public void onPlayerJoin(final PlayerJoinEvent event) {
-		Bukkit.getScheduler().runTaskLater(this, new Runnable(){
-			public void run(){
+		Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+			public void run() {
 				getCurrentServername(event.getPlayer().getName());
 			}
 		}, 30L);
