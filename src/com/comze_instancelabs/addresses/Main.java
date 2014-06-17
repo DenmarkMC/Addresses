@@ -30,8 +30,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
-import com.comze_instancelabs.cars.CarsListener;
-
 public class Main extends JavaPlugin implements PluginMessageListener, Listener {
 
 	Economy econ = null;
@@ -46,7 +44,6 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		this.saveConfig();
 
 		Bukkit.getPluginManager().registerEvents(this, this);
-		Bukkit.getPluginManager().registerEvents(new CarsListener(this), this);
 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 		this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
