@@ -88,7 +88,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 				address = address.substring(0, address.length() - 1);
 
-				if (c < args.length + 1) {
+				if (c + 1 < args.length) {
 					number = args[c].toUpperCase();
 					postcode = args[c + 1];
 				} else {
@@ -109,11 +109,10 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					if (tryTP(p, address, number, postcode, true)) {
 						econ.withdrawPlayer(p.getName(), 1.0D);
 						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
-						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Kontakt en administrator hvis dette ikke er din oenskede lokation.");
-
+						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Du kan fremover frit teleportere hertil. Kontakt en administrator hvis dette ikke er din oenskede lokation.");
 					}
 				} else {
-					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type /buy to get more.");
+					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type " + ChatColor.GREEN + "/buy" + ChatColor.RED + " to get more. " + ChatColor.GRAY + "Ingen point tilbage. Skriv &f/buy &7for at koebe flere.");
 				}
 				return true;
 			} else if (args.length > 0 && args.length < 3) {
@@ -122,13 +121,13 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				return true;
 			} else {
 				int points = (int) econ.getBalance(p.getName());
-				String color = ChatColor.DARK_AQUA.toString();
+				String color = ChatColor.GREEN.toString();
 				if (points < 1) {
 					color = ChatColor.GOLD.toString();
 				}
 				p.sendMessage("Address teleportation points left: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
-					p.sendMessage("No Address Teleportation Points left. Type " + ChatColor.AQUA + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
+					p.sendMessage("Type " + ChatColor.GREEN + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
 				}
 				return true;
 			}
@@ -173,90 +172,102 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	 * @throws Exception
 	 */
 	public boolean getLL(Player p, String url, boolean needsServerCheck, String address, String number, String postcode) throws Exception {
-		URL obj = new URL(url.replaceAll(" ", "%20"));
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
+		try {
+			URL obj = new URL(url.replaceAll(" ", "%20"));
+			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+			con.setRequestMethod("GET");
 
-		con.setRequestProperty("User-Agent", "Mozilla");
+			con.setRequestProperty("User-Agent", "Mozilla");
 
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'GET' request to URL : " + url);
-		// System.out.println("Response Code : " + responseCode);
+			int responseCode = con.getResponseCode();
+			System.out.println("\nSending 'GET' request to URL : " + url);
+			// System.out.println("Response Code : " + responseCode);
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
+			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
 
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-		in.close();
-
-		// print result
-		String r = response.toString();
-		String x = "";
-		String y = "";
-
-		int cindex = r.indexOf("\"koordinater\"");
-		int commaindex = r.indexOf(",", cindex);
-		int endstuffsindex = r.indexOf("]", commaindex);
-
-		// TODO fix unexpected inputs like '/atp a 1 1' which lead to errors
-		if (cindex < 0 || commaindex < 0) {
-			p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
-			return false;
-		}
-		x = r.substring(cindex + 24, commaindex);
-		y = r.substring(commaindex + 9, (endstuffsindex - 6));
-
-		System.out.println(x);
-		System.out.println(y);
-
-		int tpx = (int) Double.parseDouble(x) - 600000;
-		int tpz = 6200000 - (int) Double.parseDouble(y);
-
-		int tpy = 0;
-
-		for (int i = 0; i < 100; i++) {
-			if (p.getWorld().getBlockAt(new Location(p.getWorld(), tpx, i, tpz)).getType() == Material.AIR) {
-				tpy = i;
-				break;
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
 			}
-		}
+			in.close();
 
-		if (p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR) {
-			// most likely wrong server
-			if (needsServerCheck) {
-				getLogger().info("Wrong server, fixing it.");
-				this.handleCorrectServer(p.getName(), address, number, postcode);
-				return true;
+			// print result
+			String r = response.toString();
+			String x = "";
+			String y = "";
+
+			int cindex = r.indexOf("\"koordinater\"");
+			int commaindex = r.indexOf(",", cindex);
+			int endstuffsindex = r.indexOf("]", commaindex);
+
+			// TODO fix unexpected inputs like '/atp a 1 1' which lead to errors
+			if (cindex < 1 || commaindex < 1 || endstuffsindex < 1) {
+				p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+				return false;
 			}
-			return true;
-		}
-
-		tpy++;
-
-		// try to find a grass/stone block in a radius of 10 blocks (20*20)
-		boolean done = false;
-		for (int i_ = 0; i_ < 20; i_++) {
-			if (done) {
-				break;
+			try {
+				x = r.substring(cindex + 24, commaindex);
+				y = r.substring(commaindex + 9, (endstuffsindex - 6));
+			} catch (Exception e) {
+				p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+				return false;
 			}
-			for (int j_ = 0; j_ < 20; j_++) {
-				Block b = p.getWorld().getBlockAt(tpx - 10 + i_, tpy - 2, tpz - 10 + j_);
-				if (b.getType() == Material.STONE || b.getType() == Material.GRASS) {
-					tpx = tpx - 5 + i_;
-					tpz = tpz - 5 + j_;
-					done = true;
+
+			System.out.println(x);
+			System.out.println(y);
+
+			int tpx = (int) Double.parseDouble(x) - 600000;
+			int tpz = 6200000 - (int) Double.parseDouble(y);
+
+			int tpy = 0;
+
+			for (int i = 0; i < 100; i++) {
+				if (p.getWorld().getBlockAt(new Location(p.getWorld(), tpx, i, tpz)).getType() == Material.AIR) {
+					tpy = i;
 					break;
 				}
 			}
+
+			if (p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR) {
+				// most likely wrong server
+				if (needsServerCheck) {
+					getLogger().info("Wrong server, fixing it.");
+					this.handleCorrectServer(p.getName(), address, number, postcode);
+					return true;
+				}
+				return true;
+			}
+
+			tpy++;
+
+			// try to find a grass/stone block in a radius of 10 blocks (20*20)
+			boolean done = false;
+			for (int i_ = 0; i_ < 20; i_++) {
+				if (done) {
+					break;
+				}
+				for (int j_ = 0; j_ < 20; j_++) {
+					Block b = p.getWorld().getBlockAt(tpx - 10 + i_, tpy - 2, tpz - 10 + j_);
+					if (b.getType() == Material.STONE || b.getType() == Material.GRASS || b.getType() == Material.WOOL) {
+						tpx = tpx - 5 + i_;
+						tpz = tpz - 5 + j_;
+						done = true;
+						break;
+					}
+				}
+			}
+
+			p.teleport(new Location(p.getWorld(), tpx, tpy, tpz));
+			// p.teleport(new Location(p.getWorld(), Double.parseDouble(x) -
+			// 600000,
+			// tpy, 6200000 - Double.parseDouble(y)));
+			return true;
+		} catch (Exception e) {
+			p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+			return false;
 		}
 
-		p.teleport(new Location(p.getWorld(), tpx, tpy, tpz));
-		// p.teleport(new Location(p.getWorld(), Double.parseDouble(x) - 600000,
-		// tpy, 6200000 - Double.parseDouble(y)));
-		return true;
 	}
 
 	/**
