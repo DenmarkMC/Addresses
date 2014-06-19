@@ -112,7 +112,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Du kan fremover frit teleportere hertil. Kontakt en administrator hvis dette ikke er din oenskede lokation.");
 					}
 				} else {
-					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type " + ChatColor.GREEN + "/buy" + ChatColor.RED + " to get more. " + ChatColor.GRAY + "Ingen point tilbage. Skriv &f/buy &7for at koebe flere.");
+					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type " + ChatColor.GREEN + "/buy" + ChatColor.RED + " to get more. " + ChatColor.GRAY + "Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
 				}
 				return true;
 			} else if (args.length > 0 && args.length < 3) {
@@ -125,9 +125,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (points < 1) {
 					color = ChatColor.GOLD.toString();
 				}
-				p.sendMessage("Address teleportation points left: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
+				p.sendMessage("Address Teleportation Points: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
 					p.sendMessage("Type " + ChatColor.GREEN + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
+				}else{
+					p.sendMessage("Usage: /atp <address>");
 				}
 				return true;
 			}
