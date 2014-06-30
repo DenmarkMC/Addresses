@@ -231,7 +231,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 			}
 
-			if (p.getWorld().getBlockAt(tpx, 3, tpy).getType() == Material.AIR) {
+			if (p.getWorld().getBlockAt(tpx, 3, tpz).getType() == Material.AIR) {
 				// most likely wrong server
 				if (needsServerCheck) {
 					getLogger().info("Wrong server, fixing it.");
