@@ -224,7 +224,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 			int tpy = 0;
 
-			for (int i = 0; i < 100; i++) {
+			for (int i = 0; i < 150; i++) {
 				if (p.getWorld().getBlockAt(new Location(p.getWorld(), tpx, i, tpz)).getType() == Material.AIR) {
 					tpy = i;
 					break;
