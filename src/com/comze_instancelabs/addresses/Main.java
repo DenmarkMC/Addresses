@@ -128,7 +128,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				p.sendMessage("Address Teleportation Points: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
 					p.sendMessage("Type " + ChatColor.GREEN + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
-				}else{
+				} else {
 					p.sendMessage("Usage: /atp <address>");
 				}
 				return true;
@@ -138,8 +138,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	/**
-	 * Sets the first character of a string uppercase and the rest lowercase and
-	 * returns the new string
+	 * Sets the first character of a string uppercase and the rest lowercase and returns the new string
 	 * 
 	 * @param str
 	 * @return
@@ -224,7 +223,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 			int tpy = 0;
 
-			for (int i = 0; i < 150; i++) {
+			for (int i = 0; i < 220; i++) {
 				if (p.getWorld().getBlockAt(new Location(p.getWorld(), tpx, i, tpz)).getType() == Material.AIR) {
 					tpy = i;
 					break;
@@ -298,8 +297,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	/**
-	 * Returns whether address is free to teleport to (as player paid for it) or
-	 * not
+	 * Returns whether address is free to teleport to (as player paid for it) or not
 	 * 
 	 * @param p
 	 * @param address
@@ -393,8 +391,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	/**
-	 * Will save the address into mysql and connect the player to the correct
-	 * server
+	 * Will save the address into mysql and connect the player to the correct server
 	 * 
 	 * @param player
 	 * @param address
