@@ -12,6 +12,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -109,7 +110,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					if (tryTP(p, address, number, postcode, true)) {
 						econ.withdrawPlayer(p.getName(), 1.0D);
 						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
-						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Du kan fremover frit teleportere hertil. Kontakt en administrator hvis dette ikke er din oenskede lokation.");
+						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Du kan fremover frit teleportere hertil. Kontakt en administrator hvis dette ikke er din oenskede lokation. Husk at din lokation er synlig paa kortet for alle spillere.");
 					}
 				} else {
 					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type " + ChatColor.GREEN + "/buy" + ChatColor.RED + " to get more. " + ChatColor.GRAY + "Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
@@ -130,6 +131,10 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					p.sendMessage("Type " + ChatColor.GREEN + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
 				} else {
 					p.sendMessage("Usage: /atp <address>");
+				}
+				p.sendMessage(ChatColor.YELLOW + "=== " + ChatColor.WHITE + "Adresser " + ChatColor.YELLOW + "===");
+				for (String address : mysqlAllAddresses(p.getName())) {
+					p.sendMessage(ChatColor.GRAY + address);
 				}
 				return true;
 			}
@@ -202,7 +207,6 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			int commaindex = r.indexOf(",", cindex);
 			int endstuffsindex = r.indexOf("]", commaindex);
 
-			// TODO fix unexpected inputs like '/atp a 1 1' which lead to errors
 			if (cindex < 1 || commaindex < 1 || endstuffsindex < 1) {
 				p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
 				return false;
@@ -320,6 +324,35 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	/**
+	 * Returns all paid addresses of a player
+	 * 
+	 * @param p
+	 * @param address
+	 * @param number
+	 * @param postcode
+	 * @return
+	 */
+	public ArrayList<String> mysqlAllAddresses(String p) {
+		ArrayList<String> ret = new ArrayList<String>();
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM address WHERE player='" + p + "'");
+			if (!res3.isBeforeFirst()) {
+				return ret;
+			}
+			while (res3.next()) {
+				ret.add(res3.getString("street") + " " + res3.getString("number"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return ret;
 	}
 
 	/**
