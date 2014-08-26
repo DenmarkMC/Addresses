@@ -128,13 +128,16 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 				p.sendMessage("Address Teleportation Points: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
-					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&2Skriv &a/buy &2for at købe flere. &7Type &f/buy for more points."));
+					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&2Skriv &a/buy &2for at købe flere. &7Type &f/buy &7for more points."));
 				} else {
 					p.sendMessage(ChatColor.GRAY + "Syntax: /atp <vejnavn> <husnr> <postnr>");
 				}
-				p.sendMessage(ChatColor.YELLOW + "=== " + ChatColor.WHITE + "Adresser " + ChatColor.YELLOW + "===");
-				for (String address : mysqlAllAddresses(p.getName())) {
-					p.sendMessage(ChatColor.GRAY + address);
+				ArrayList<String> addresses = new ArrayList<String>(mysqlAllAddresses(p.getName()));
+				if(addresses.size() > 0){
+					p.sendMessage(ChatColor.YELLOW + "=== " + ChatColor.WHITE + "Adresser " + ChatColor.YELLOW + "===");
+					for (String address : mysqlAllAddresses(p.getName())) {
+						p.sendMessage(ChatColor.GRAY + address);
+					}
 				}
 				return true;
 			}
