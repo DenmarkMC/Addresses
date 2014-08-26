@@ -128,9 +128,9 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				}
 				p.sendMessage("Address Teleportation Points: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
-					p.sendMessage("Type " + ChatColor.GREEN + "/buy " + ChatColor.WHITE + "to get more. §7Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
+					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&2Skriv &a/buy &2for at købe flere. &7Type &f/buy for more points."));
 				} else {
-					p.sendMessage("Usage: /atp <address>");
+					p.sendMessage(ChatColor.GRAY + "Syntax: /atp <vejnavn> <husnr> <postnr>");
 				}
 				p.sendMessage(ChatColor.YELLOW + "=== " + ChatColor.WHITE + "Adresser " + ChatColor.YELLOW + "===");
 				for (String address : mysqlAllAddresses(p.getName())) {
@@ -208,14 +208,14 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			int endstuffsindex = r.indexOf("]", commaindex);
 
 			if (cindex < 1 || commaindex < 1 || endstuffsindex < 1) {
-				p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+				p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
 				return false;
 			}
 			try {
 				x = r.substring(cindex + 24, commaindex);
 				y = r.substring(commaindex + 9, (endstuffsindex - 6));
 			} catch (Exception e) {
-				p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+				p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
 				return false;
 			}
 
@@ -269,7 +269,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			// tpy, 6200000 - Double.parseDouble(y)));
 			return true;
 		} catch (Exception e) {
-			p.sendMessage(ChatColor.RED + "Could not find address: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Kunne ikke finde adressen.");
+			p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
 			return false;
 		}
 
@@ -344,10 +344,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		try {
 			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM address WHERE player='" + p + "'");
 			if (!res3.isBeforeFirst()) {
+				System.out.println("No addresses found");
 				return ret;
 			}
 			while (res3.next()) {
-				ret.add(res3.getString("street") + " " + res3.getString("number"));
+				ret.add(res3.getString("street") + " " + res3.getString("number") + " " + res3.getString("postcode"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
