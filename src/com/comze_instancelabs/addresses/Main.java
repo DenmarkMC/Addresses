@@ -100,7 +100,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
 					if (tryTP(p, address, number, postcode, true)) {
-						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ".");
+						p.sendMessage(ChatColor.DARK_GREEN + "Teleporteret til " + ChatColor.GREEN + address + " " + number + ".");
 					}
 					return true;
 				}
@@ -109,11 +109,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (currentpoints > 0) {
 					if (tryTP(p, address, number, postcode, true)) {
 						econ.withdrawPlayer(p.getName(), 1.0D);
-						p.sendMessage(ChatColor.GREEN + "Teleported to " + address + " " + number + ". You can freely teleport to this address from now on!");
-						p.sendMessage("If this is not your wanted location please contact an admin. " + ChatColor.GRAY + "Du kan fremover frit teleportere hertil. Kontakt en administrator hvis dette ikke er din oenskede lokation. Husk at din lokation er synlig paa kortet for alle spillere.");
+						p.sendMessage(ChatColor.DARK_GREEN + "Teleporteret til " + ChatColor.GREEN + address + " " + number + ChatColor.DARK_GREEN + ". Du kan frit teleportere til denne adresse igen! Kontakt en admin hvis dette ikke er din ønskede lokation. Husk at din lokation er synlig på kortet for alle spillere.");
+						p.sendMessage(ChatColor.GRAY + "If this is not your wanted location, please contact an admin.");
 					}
 				} else {
-					p.sendMessage(ChatColor.RED + "You have no address teleportation points left. Type " + ChatColor.GREEN + "/buy" + ChatColor.RED + " to get more. " + ChatColor.GRAY + "Ingen point tilbage. Skriv §f/buy §7for at koebe flere.");
+					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cIngen point tilbage. Skriv &a/buy &cfor at købe flere. &7No points left. Type &f/buy &7to get more."));
 				}
 				return true;
 			} else if (args.length > 0 && args.length < 3) {
@@ -133,7 +133,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					p.sendMessage(ChatColor.GRAY + "Syntax: /atp <vejnavn> <husnr> <postnr>");
 				}
 				ArrayList<String> addresses = new ArrayList<String>(mysqlAllAddresses(p.getName()));
-				if(addresses.size() > 0){
+				if (addresses.size() > 0) {
 					p.sendMessage(ChatColor.YELLOW + "=== " + ChatColor.WHITE + "Adresser " + ChatColor.YELLOW + "===");
 					for (String address : mysqlAllAddresses(p.getName())) {
 						p.sendMessage(ChatColor.GRAY + address);
