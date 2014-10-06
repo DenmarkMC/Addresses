@@ -1,4 +1,4 @@
-package com.comze_instancelabs.addresses; // replace this with yours 
+package com.instancedev.addresses; // replace this with yours 
   
   
 import java.sql.Connection;

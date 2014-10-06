@@ -1,4 +1,4 @@
-package com.comze_instancelabs.addresses;
+package com.instancedev.addresses;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

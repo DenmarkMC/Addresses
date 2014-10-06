@@ -1,4 +1,4 @@
-package com.comze_instancelabs.addresses;
+package com.instancedev.addresses;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -37,10 +37,31 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 	JavaPlugin plugin = null;
 
+	String wrong_syntax_0 = "&cWrong syntax, must be: &6/atp <street> <number> <postcode> &c.";
+	String wrong_syntax_1 = "&cExample: &6/atp Vesterbrogade 6C 1620";
+	String teleported_to = "&2Teleporteret til &c<address> <number>";
+	String you_can_now_tp_here = "&2Du kan frit teleportere til denne adresse igen! Kontakt en admin hvis dette ikke er din ï¿½nskede lokation. Husk at din lokation er synlig pï¿½ kortet for alle spillere.";
+	String if_not_wanted = "&7If this is not your wanted location, please contact an admin.";
+	String no_points_left = "&cIngen point tilbage. Skriv &a/buy &cfor at kï¿½be flere. &7No points left. Type &f/buy &7to get more.";
+	String no_points_buy_more = "&2Skriv &a/buy &2for at kï¿½be flere. &7Type &f/buy &7for more points.";
+	String cmd_syntax = "&7Syntax: /atp <vejnavn> <husnr> <postnr>";
+	String atp = "Address Teleportation Points: ";
+	String could_not_find_address = "&cKunne ikke finde adressen: &6<address> <number> (<postcode>)&c. &7Wrong address or syntax.";
+
 	public void onEnable() {
 		plugin = this;
 		setupEconomy();
 		getConfig().addDefault("mysql.pw", "password");
+		getConfig().addDefault("messages.wrong_syntax_0", wrong_syntax_0);
+		getConfig().addDefault("messages.wrong_syntax_1", wrong_syntax_1);
+		getConfig().addDefault("messages.teleported_to", teleported_to);
+		getConfig().addDefault("messages.you_can_now_tp_here", you_can_now_tp_here);
+		getConfig().addDefault("messages.if_not_wanted", if_not_wanted);
+		getConfig().addDefault("messages.no_points_left", no_points_left);
+		getConfig().addDefault("messages.no_points_buy_more", no_points_buy_more);
+		getConfig().addDefault("messages.cmd_syntax", cmd_syntax);
+		getConfig().addDefault("messages.atp", atp);
+		getConfig().addDefault("messages.could_not_find_address", could_not_find_address);
 		getConfig().options().copyDefaults(true);
 		this.saveConfig();
 
@@ -49,6 +70,16 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 		this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
 
+		wrong_syntax_0 = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.wrong_syntax_0"));
+		wrong_syntax_1 = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.wrong_syntax_1"));
+		teleported_to = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.teleported_to"));
+		you_can_now_tp_here = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.you_can_now_tp_here"));
+		if_not_wanted = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.if_not_wanted"));
+		no_points_left = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.no_points_left"));
+		no_points_buy_more = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.no_points_buy_more"));
+		cmd_syntax = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.cmd_syntax"));
+		atp = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.atp"));
+		could_not_find_address = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.could_not_find_address"));
 	}
 
 	private boolean setupEconomy() {
@@ -83,8 +114,8 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					}
 				}
 				if (address.length() < 1) {
-					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
-					p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
+					p.sendMessage(wrong_syntax_0);
+					p.sendMessage(wrong_syntax_1);
 					return true;
 				}
 				address = address.substring(0, address.length() - 1);
@@ -93,14 +124,14 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					number = args[c].toUpperCase();
 					postcode = args[c + 1];
 				} else {
-					p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
-					p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
+					p.sendMessage(wrong_syntax_0);
+					p.sendMessage(wrong_syntax_1);
 					return true;
 				}
 
 				if (mysqlUsedAddress(p.getName(), address, number, postcode)) {
 					if (tryTP(p, address, number, postcode, true)) {
-						p.sendMessage(ChatColor.DARK_GREEN + "Teleporteret til " + ChatColor.GREEN + address + " " + number + ".");
+						p.sendMessage(teleported_to.replaceAll("<address>", address).replaceAll("<number>", number));
 					}
 					return true;
 				}
@@ -109,16 +140,16 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (currentpoints > 0) {
 					if (tryTP(p, address, number, postcode, true)) {
 						econ.withdrawPlayer(p.getName(), 1.0D);
-						p.sendMessage(ChatColor.DARK_GREEN + "Teleporteret til " + ChatColor.GREEN + address + " " + number + ChatColor.DARK_GREEN + ". Du kan frit teleportere til denne adresse igen! Kontakt en admin hvis dette ikke er din ønskede lokation. Husk at din lokation er synlig på kortet for alle spillere.");
-						p.sendMessage(ChatColor.GRAY + "If this is not your wanted location, please contact an admin.");
+						p.sendMessage(teleported_to.replaceAll("<address>", address).replaceAll("<number>", number) + you_can_now_tp_here);
+						p.sendMessage(if_not_wanted);
 					}
 				} else {
-					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cIngen point tilbage. Skriv &a/buy &cfor at købe flere. &7No points left. Type &f/buy &7to get more."));
+					p.sendMessage(no_points_left);
 				}
 				return true;
 			} else if (args.length > 0 && args.length < 3) {
-				p.sendMessage(ChatColor.RED + "Wrong syntax, must be: " + ChatColor.GOLD + "/atp <street> <number> <postcode>" + ChatColor.RED + ".");
-				p.sendMessage(ChatColor.RED + "Example: " + ChatColor.GOLD + "/atp Vesterbrogade 6C 1620");
+				p.sendMessage(wrong_syntax_0);
+				p.sendMessage(wrong_syntax_1);
 				return true;
 			} else {
 				int points = (int) econ.getBalance(p.getName());
@@ -126,11 +157,11 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (points < 1) {
 					color = ChatColor.GOLD.toString();
 				}
-				p.sendMessage("Address Teleportation Points: " + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
+				p.sendMessage(atp + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
 				if (points < 1) {
-					p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&2Skriv &a/buy &2for at købe flere. &7Type &f/buy &7for more points."));
+					p.sendMessage(no_points_buy_more);
 				} else {
-					p.sendMessage(ChatColor.GRAY + "Syntax: /atp <vejnavn> <husnr> <postnr>");
+					p.sendMessage(cmd_syntax);
 				}
 				ArrayList<String> addresses = new ArrayList<String>(mysqlAllAddresses(p.getName()));
 				if (addresses.size() > 0) {
@@ -211,14 +242,14 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			int endstuffsindex = r.indexOf("]", commaindex);
 
 			if (cindex < 1 || commaindex < 1 || endstuffsindex < 1) {
-				p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
+				p.sendMessage(could_not_find_address.replaceAll("<address>", address).replaceAll("<number>", number).replaceAll("<postcode>", postcode));
 				return false;
 			}
 			try {
 				x = r.substring(cindex + 24, commaindex);
 				y = r.substring(commaindex + 9, (endstuffsindex - 6));
 			} catch (Exception e) {
-				p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
+				p.sendMessage(could_not_find_address.replaceAll("<address>", address).replaceAll("<number>", number).replaceAll("<postcode>", postcode));
 				return false;
 			}
 
@@ -258,10 +289,12 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				for (int j_ = 0; j_ < 20; j_++) {
 					Block b = p.getWorld().getBlockAt(tpx - 10 + i_, tpy - 2, tpz - 10 + j_);
 					if (b.getType() == Material.STONE || b.getType() == Material.GRASS || b.getType() == Material.WOOL) {
-						tpx = tpx - 5 + i_;
-						tpz = tpz - 5 + j_;
-						done = true;
-						break;
+						if (b.getLocation().clone().add(0D, 1D, 0D).getBlock().getType() == Material.AIR) {
+							tpx = tpx - 5 + i_;
+							tpz = tpz - 5 + j_;
+							done = true;
+							break;
+						}
 					}
 				}
 			}
@@ -272,10 +305,9 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			// tpy, 6200000 - Double.parseDouble(y)));
 			return true;
 		} catch (Exception e) {
-			p.sendMessage(ChatColor.RED + "Kunne ikke finde adressen: " + ChatColor.GOLD + address + " " + number + " (" + postcode + ")" + ChatColor.RED + ". " + ChatColor.GRAY + "Wrong address or syntax.");
+			p.sendMessage(could_not_find_address.replaceAll("<address>", address).replaceAll("<number>", number).replaceAll("<postcode>", postcode));
 			return false;
 		}
-
 	}
 
 	/**
