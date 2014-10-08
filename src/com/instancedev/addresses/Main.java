@@ -14,8 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import net.milkbowl.vault.economy.Economy;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -27,13 +25,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
 public class Main extends JavaPlugin implements PluginMessageListener, Listener {
 
-	Economy econ = null;
+	// Economy econ = null;
 
 	JavaPlugin plugin = null;
 
@@ -50,7 +47,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 
 	public void onEnable() {
 		plugin = this;
-		setupEconomy();
+		// setupEconomy();
 		getConfig().addDefault("mysql.pw", "password");
 		getConfig().addDefault("messages.wrong_syntax_0", wrong_syntax_0);
 		getConfig().addDefault("messages.wrong_syntax_1", wrong_syntax_1);
@@ -82,17 +79,17 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		could_not_find_address = ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages.could_not_find_address"));
 	}
 
-	private boolean setupEconomy() {
-		if (getServer().getPluginManager().getPlugin("Vault") == null) {
-			return false;
-		}
-		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-		if (rsp == null) {
-			return false;
-		}
-		econ = rsp.getProvider();
-		return econ != null;
-	}
+	// private boolean setupEconomy() {
+	// if (getServer().getPluginManager().getPlugin("Vault") == null) {
+	// return false;
+	// }
+	// RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+	// if (rsp == null) {
+	// return false;
+	// }
+	// econ = rsp.getProvider();
+	// return econ != null;
+	// }
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("address")) {
@@ -136,10 +133,12 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					return true;
 				}
 
-				int currentpoints = (int) econ.getBalance(p.getName());
+				// int currentpoints = (int) econ.getBalance(p.getName());
+				int currentpoints = mysqlGetPoints(p.getName());
 				if (currentpoints > 0) {
 					if (tryTP(p, address, number, postcode, true)) {
-						econ.withdrawPlayer(p.getName(), 1.0D);
+						// econ.withdrawPlayer(p.getName(), 1.0D);
+						mysqlAddPoints(p.getName(), -1);
 						p.sendMessage(teleported_to.replaceAll("<address>", address).replaceAll("<number>", number) + you_can_now_tp_here);
 						p.sendMessage(if_not_wanted);
 					}
@@ -152,12 +151,13 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				p.sendMessage(wrong_syntax_1);
 				return true;
 			} else {
-				int points = (int) econ.getBalance(p.getName());
+				// int points = (int) econ.getBalance(p.getName());
+				int points = mysqlGetPoints(p.getName());
 				String color = ChatColor.GREEN.toString();
 				if (points < 1) {
 					color = ChatColor.GOLD.toString();
 				}
-				p.sendMessage(atp + color + "" + ChatColor.BOLD + Integer.toString((int) econ.getBalance(p.getName())));
+				p.sendMessage(atp + color + "" + ChatColor.BOLD + Integer.toString(points));
 				if (points < 1) {
 					p.sendMessage(no_points_buy_more);
 				} else {
@@ -171,6 +171,14 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					}
 				}
 				return true;
+			}
+		} else if (cmd.getName().equalsIgnoreCase("addpoints")) {
+			if (sender.isOp()) {
+				if (args.length > 1) {
+					String player = args[0];
+					String points = args[1];
+					this.mysqlAddPoints(player, Integer.parseInt(points));
+				}
 			}
 		}
 		return false;
@@ -414,6 +422,50 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void mysqlAddPoints(String p_, int pointsToAdd) {
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM playerpoints WHERE player='" + p_ + "'");
+			if (!res3.isBeforeFirst()) {
+				// there's no such user
+				if (pointsToAdd < 0) {
+					pointsToAdd = 0;
+				}
+				c.createStatement().executeUpdate("INSERT INTO address VALUES('0', '" + p_ + "', '" + Integer.toString(pointsToAdd) + "')");
+				return;
+			}
+			res3.next();
+			int points = res3.getInt("points") + pointsToAdd;
+			c.createStatement().executeUpdate("UPDATE playerpoints SET points='" + Integer.toString(points) + "' WHERE player='" + p_ + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public int mysqlGetPoints(String p_) {
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		Connection c = null;
+		c = MySQL.open();
+
+		try {
+			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM playerpoints WHERE player='" + p_ + "'");
+			if (!res3.isBeforeFirst()) {
+				// there's no such user
+				c.createStatement().executeUpdate("INSERT INTO address VALUES('0', '" + p_ + "', '0')");
+				return 0;
+			}
+			res3.next();
+			int points = res3.getInt("points");
+			return points;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 	/**

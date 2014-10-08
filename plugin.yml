@@ -7,3 +7,8 @@ commands:
       description: Main command
       usage: /address
       aliases: [atp, at]
+commands:
+   addpoints:
+      description: Main command
+      usage: /addpoints
+      aliases: [atpaddpoints]
