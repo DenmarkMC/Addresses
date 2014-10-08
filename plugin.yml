@@ -1,13 +1,12 @@
 name: DenmarkAddresses
 main: com.instancedev.addresses.Main
-version: 1.0
+version: 1.1
 author: instancelabs
 commands:
    address:
       description: Main command
       usage: /address
       aliases: [atp, at]
-commands:
    addpoints:
       description: Main command
       usage: /addpoints

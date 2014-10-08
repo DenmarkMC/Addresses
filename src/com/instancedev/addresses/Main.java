@@ -49,6 +49,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 		plugin = this;
 		// setupEconomy();
 		getConfig().addDefault("mysql.pw", "password");
+		getConfig().addDefault("config.start_points", 1);
 		getConfig().addDefault("messages.wrong_syntax_0", wrong_syntax_0);
 		getConfig().addDefault("messages.wrong_syntax_1", wrong_syntax_1);
 		getConfig().addDefault("messages.teleported_to", teleported_to);
@@ -180,6 +181,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 					this.mysqlAddPoints(player, Integer.parseInt(points));
 				}
 			}
+			return true;
 		}
 		return false;
 	}
@@ -425,7 +427,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	public void mysqlAddPoints(String p_, int pointsToAdd) {
-		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
 		Connection c = null;
 		c = MySQL.open();
 
@@ -436,7 +438,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 				if (pointsToAdd < 0) {
 					pointsToAdd = 0;
 				}
-				c.createStatement().executeUpdate("INSERT INTO address VALUES('0', '" + p_ + "', '" + Integer.toString(pointsToAdd) + "')");
+				c.createStatement().executeUpdate("INSERT INTO playerpoints VALUES('0', '" + p_ + "', '" + Integer.toString(pointsToAdd) + "')");
 				return;
 			}
 			res3.next();
@@ -448,7 +450,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 	}
 
 	public int mysqlGetPoints(String p_) {
-		MySQL MySQL = new MySQL("localhost", "3306", "addresses_temp", "root", getConfig().getString("mysql.pw"));
+		MySQL MySQL = new MySQL("localhost", "3306", "addresses", "root", getConfig().getString("mysql.pw"));
 		Connection c = null;
 		c = MySQL.open();
 
@@ -456,7 +458,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			ResultSet res3 = c.createStatement().executeQuery("SELECT * FROM playerpoints WHERE player='" + p_ + "'");
 			if (!res3.isBeforeFirst()) {
 				// there's no such user
-				c.createStatement().executeUpdate("INSERT INTO address VALUES('0', '" + p_ + "', '0')");
+				c.createStatement().executeUpdate("INSERT INTO playerpoints VALUES('0', '" + p_ + "', '" + this.getConfig().getInt("config.start_points") + "')");
 				return 0;
 			}
 			res3.next();
