@@ -459,7 +459,7 @@ public class Main extends JavaPlugin implements PluginMessageListener, Listener 
 			if (!res3.isBeforeFirst()) {
 				// there's no such user
 				c.createStatement().executeUpdate("INSERT INTO playerpoints VALUES('0', '" + p_ + "', '" + this.getConfig().getInt("config.start_points") + "')");
-				return 0;
+				return this.getConfig().getInt("config.start_points");
 			}
 			res3.next();
 			int points = res3.getInt("points");
